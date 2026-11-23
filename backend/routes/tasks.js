@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { readDB, writeDB } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
+import {
+  getDeadlineStatus,
+  parseDeadlineTimestamp,
+  parseTimezoneOffset,
+  sortTasksByUrgency
+} from "../utils/deadline.js";
 
 const router = Router();
 
@@ -10,26 +16,38 @@ router.use(requireAuth);
 /**
  * GET /api/tasks
  * Daftar seluruh tugas milik pengguna yang sedang login, lintas semua mata
- * kuliah. Setiap tugas menyertakan `mata_kuliah` (nama mata kuliahnya).
+ * kuliah. Setiap tugas menyertakan `mata_kuliah` (nama mata kuliahnya) dan
+ * `deadline_status` ("approaching" | "normal" | "overdue" | null).
  *
- * Urutan saat ini: `created_at` terbaru di atas.
+ * Urutan: `approaching` (deadline terdekat) -> `normal` (deadline terdekat)
+ *         -> `overdue` (paling baru terlewati) -> tugas berstatus "selesai".
  *
  * Response : 200 { tasks }
- *
- * CATATAN UNTUK PESERTA STUDI KASUS:
- * Ini adalah titik yang relevan untuk fitur "Reminder Tugas Mendekati Deadline".
- * Silakan tambahkan logic untuk menandai/mengurutkan ulang tugas yang
- * sisa waktunya < 24 jam di sini (atau di tempat lain sesuai rancangan Anda).
  */
 router.get("/", (req, res) => {
   const db = readDB();
-  const tasks = db.tasks
+  const tzOffsetMinutes = parseTimezoneOffset(req.headers["x-timezone-offset"]);
+
+  let currentTime = Date.now();
+  if (process.env.NODE_ENV !== "production" && typeof req.query.now === "string") {
+    const simulatedNow = parseDeadlineTimestamp(req.query.now, tzOffsetMinutes);
+    if (Number.isFinite(simulatedNow)) {
+      currentTime = simulatedNow;
+    }
+  }
+
+  const enrichedTasks = db.tasks
     .filter((t) => t.user_id === req.user.id)
     .map((t) => {
       const course = db.courses.find((c) => c.id === t.mata_kuliah_id);
-      return { ...t, mata_kuliah: course ? course.name : null };
-    })
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      return {
+        ...t,
+        mata_kuliah: course ? course.name : null,
+        deadline_status: getDeadlineStatus(t, currentTime, tzOffsetMinutes)
+      };
+    });
+
+  const tasks = sortTasksByUrgency(enrichedTasks, tzOffsetMinutes);
 
   res.json({ tasks });
 });

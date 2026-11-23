@@ -64,10 +64,26 @@ a {
   gap: 12px;
 }
 
+.task-card.approaching {
+  border-left: 4px solid #f59e0b;
+}
+
+.task-card.overdue {
+  border: 1px solid #9ca3af;
+  border-left: 4px solid #6b7280;
+}
+
 .task-card .meta {
   color: #6b7280;
   font-size: 0.85rem;
   margin-top: 4px;
+}
+
+.task-badges {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .badge {
@@ -86,6 +102,16 @@ a {
 .badge.selesai {
   background: #d1fae5;
   color: #065f46;
+}
+
+.badge.approaching {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.badge.overdue {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 form {

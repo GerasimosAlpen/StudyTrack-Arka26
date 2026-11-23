@@ -12,12 +12,13 @@ const api = axios.create({
   baseURL: "/api"
 });
 
-// Menyisipkan token login ke setiap request jika tersedia.
+// Menyisipkan token login dan offset zona waktu pengguna ke setiap request.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  config.headers["X-Timezone-Offset"] = String(new Date().getTimezoneOffset());
   return config;
 });
 
