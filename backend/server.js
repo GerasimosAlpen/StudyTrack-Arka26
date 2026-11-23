@@ -7,7 +7,7 @@
 import express from "express";
 import cors from "cors";
 
-import { PORT } from "./config.js";
+import { PORT, CORS_ORIGIN } from "./config.js";
 import authRoutes from "./routes/auth.js";
 import courseRoutes from "./routes/courses.js";
 import taskRoutes from "./routes/tasks.js";
@@ -15,7 +15,10 @@ import { resetDB } from "./db.js";
 
 const app = express();
 
-app.use(cors());
+const corsOrigins =
+  CORS_ORIGIN === "*" ? true : CORS_ORIGIN.split(",").map((origin) => origin.trim());
+
+app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
 
 // GET /api/health - cek apakah server sedang berjalan
