@@ -9,7 +9,7 @@ export const TOKEN_KEY = "studytrack_token";
  * (lihat `vite.config.js`).
  */
 const api = axios.create({
-  baseURL: "/api"
+  baseURL: (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "")
 });
 
 // Menyisipkan token login dan offset zona waktu pengguna ke setiap request.
